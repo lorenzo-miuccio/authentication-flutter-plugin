@@ -27,7 +27,7 @@ abstract class SalamiUnlockPlatform extends PlatformInterface {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-  Future<bool> requireUnlock(String message) {
+  Future<bool> requireUnlock(String? message) {
     throw UnimplementedError('requireUnlock() has not been implemented.');
   }
 }

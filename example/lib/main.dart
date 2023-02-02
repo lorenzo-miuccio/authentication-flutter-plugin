@@ -1,9 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-
-import 'package:flutter/services.dart';
-import 'package:salami_unlock/salami_unlock.dart';
-import 'package:salami_unlock_example/salami_page.dart';
 import 'package:salami_unlock_example/unlock_button.dart';
 
 void main() {
@@ -20,7 +15,7 @@ class MyApp extends StatelessWidget {
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: Center(
+        body: const Center(
           child: UnlockButton(),
         ),
       ),
