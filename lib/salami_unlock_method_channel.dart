@@ -17,6 +17,8 @@ class MethodChannelSalamiUnlock extends SalamiUnlockPlatform {
 
   @override
   Future<bool> requireUnlock(String message) async {
-    return await methodChannel.invokeMethod('requireUnlock', {"message": message});
+    final result = await methodChannel.invokeMethod<String>('requireUnlock', {"message": message});
+    print(result);
+    return result == 'Success' ? true : false;
   }
 }

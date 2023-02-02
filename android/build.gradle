@@ -25,7 +25,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 33
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -43,4 +43,8 @@ android {
     defaultConfig {
         minSdkVersion 23
     }
+}
+
+dependencies {
+    implementation 'androidx.biometric:biometric-ktx:1.2.0-alpha05'
 }
