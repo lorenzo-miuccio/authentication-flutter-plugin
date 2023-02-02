@@ -11,6 +11,7 @@ import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -96,7 +97,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                     activity.startActivityForResult(authIntent, requestCode)
                 }
             } else {
-                biometricPrompt = BiometricPrompt(this, executor,
+                biometricPrompt = BiometricPrompt(activity, executor,
                     object : BiometricPrompt.AuthenticationCallback() {
                         override fun onAuthenticationError(errorCode: Int,
                                                            errString: CharSequence) {
@@ -131,6 +132,8 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                         )
                     }
                     activity.startActivityForResult(enrollIntent, requestCode)
+                } else {
+                    biometricPrompt.authenticate(promptInfo)
                 }
             }
         }
