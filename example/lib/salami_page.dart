@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 class SalamiPage extends StatelessWidget {
@@ -6,6 +5,11 @@ class SalamiPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Text('Salami');
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Beccati sto salame'),
+      ),
+      body: Center(child: Image.asset('assets/salami.jpg')),
+    );
   }
 }

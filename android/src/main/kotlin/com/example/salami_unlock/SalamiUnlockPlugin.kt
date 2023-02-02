@@ -10,7 +10,7 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
-import androidx.fragment.app.Fragment
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -69,7 +69,6 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
         when (call.method) {
             "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
             "requireUnlock" -> {
-                print(AuthResult.Success.name)
                 onActivityResultCallback = {
                     result.success(it.name)
                     onActivityResultCallback = null
@@ -83,32 +82,31 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
     }
 
     private fun requireUnlock(message: String?) {
-
-
         activity?.let { activity ->
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                 val keyguardManager =
                     activity.getSystemService(Activity.KEYGUARD_SERVICE) as KeyguardManager
                 if (keyguardManager.isKeyguardSecure) {
                     val authIntent: Intent = keyguardManager.createConfirmDeviceCredentialIntent(
-                        "prova",
-                        message ?: "Inserisci codice"
+                        message ?: "Type your code",
+                        message ?: "Log in using your credential"
                     )
                     activity.startActivityForResult(authIntent, requestCode)
                 }
             } else {
-                biometricPrompt = BiometricPrompt(activity, executor,
+                executor = ContextCompat.getMainExecutor(activity)
+                biometricPrompt = BiometricPrompt(activity as FragmentActivity, executor,
                     object : BiometricPrompt.AuthenticationCallback() {
                         override fun onAuthenticationError(errorCode: Int,
                                                            errString: CharSequence) {
                             super.onAuthenticationError(errorCode, errString)
-                            onActivityResultCallback?.invoke(AuthResult.Success)
+                            onActivityResultCallback?.invoke(AuthResult.Failure)
                         }
 
                         override fun onAuthenticationSucceeded(
                             result: BiometricPrompt.AuthenticationResult) {
                             super.onAuthenticationSucceeded(result)
-                            onActivityResultCallback?.invoke(AuthResult.Failure)
+                            onActivityResultCallback?.invoke(AuthResult.Success)
 
                         }
 
@@ -118,7 +116,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                         }
                     })
                 val promptInfo = BiometricPrompt.PromptInfo.Builder()
-                    .setTitle("Biometric login for my app")
+                    .setTitle(message ?: "Type your code")
                     .setSubtitle("Log in using your biometric credential")
                     .setAllowedAuthenticators(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)
                     .build()
@@ -150,11 +148,13 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
-        return data.takeIf { requestCode == this.requestCode }
+       data.takeIf { requestCode == this.requestCode }
             ?.takeIf { requestCode == Activity.RESULT_OK }
             ?.let {
                 onActivityResultCallback?.invoke(AuthResult.Success)
-                true
-            } ?: false
+                return true
+            }
+        onActivityResultCallback?.invoke(AuthResult.Failure)
+        return  false
     }
 }
