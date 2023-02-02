@@ -8,5 +8,6 @@ class SalamiUnlock {
 
   Future<void> require({String? message, void Function(bool)? onResult}) async {
     bool result = await SalamiUnlockPlatform.instance.requireUnlock(message ?? 'Unlock page');
+    if(onResult != null)  onResult(result);
   }
 }

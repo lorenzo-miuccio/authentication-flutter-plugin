@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:salami_unlock/salami_unlock.dart';
+import 'package:salami_unlock_example/salami_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -47,6 +48,14 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  void _authCallback(bool authResult) {
+    authResult ? Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const SalamiPage())) : ScaffoldMessenger
+        .of(
+        context).showSnackBar(const SnackBar(content: Text('error')));
+  }
+
+  Future<void> _requireAuth() => _salamiUnlockPlugin.require(message: 'Unlock to get a present', onResult: _authCallback);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -58,7 +67,9 @@ class _MyAppState extends State<MyApp> {
           child: Column(
             children: [
               Text('Running on: $_platformVersion\n'),
-              ElevatedButton(onPressed: _salamiUnlockPlugin.require, child: const Text('unlock'))
+              ElevatedButton(
+                  onPressed: _requireAuth,
+                  child: const Text('unlock'))
             ],
           ),
         ),
