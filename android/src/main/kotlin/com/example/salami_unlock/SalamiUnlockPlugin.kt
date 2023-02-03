@@ -107,7 +107,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
 
         val message = message ?: "Unlock"
         activity?.also { activity ->
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                 val keyguardManager =
                     activity.getSystemService(Activity.KEYGUARD_SERVICE) as KeyguardManager
                 if (keyguardManager.isKeyguardSecure) {
@@ -180,7 +180,17 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
-        data.takeIf { requestCode == this.requestCode }
+        if(this.requestCode == requestCode) {
+            if(resultCode == Activity.RESULT_OK) {
+                onAuthResultCallback?.invoke(AuthResult.Success)
+                return true
+            } else {
+                onAuthResultCallback?.invoke(AuthResult.Failure)
+            }
+        }
+        return  false
+    }
+       /* data.takeIf { requestCode == this.requestCode }
             ?.takeIf { resultCode == Activity.RESULT_OK }
             ?.let {
                 onAuthResultCallback?.invoke(AuthResult.Success)
@@ -188,5 +198,5 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
             }
         onAuthResultCallback?.invoke(AuthResult.Failure)
         return false
-    }
+    } */
 }

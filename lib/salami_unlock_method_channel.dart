@@ -3,10 +3,6 @@ import 'package:flutter/services.dart';
 
 import 'salami_unlock_platform_interface.dart';
 
-Enum LocalAuthResult {
-  
-}
-
 /// An implementation of [SalamiUnlockPlatform] that uses method channels.
 class MethodChannelSalamiUnlock extends SalamiUnlockPlatform {
   /// The method channel used to interact with the native platform.
@@ -20,9 +16,9 @@ class MethodChannelSalamiUnlock extends SalamiUnlockPlatform {
   }
 
   @override
-  Future<bool> requireUnlock(String? message) async {
-    final result = await methodChannel.invokeMethod<String>('requireUnlock', {"message": message});
-    print(result);
-    return result == 'Success' ? true : false;
-  }
+  Future<String?> requireUnlock(String? message) =>
+      methodChannel.invokeMethod<String>('requireUnlock', {"message": message}).then((value) => value?.toLowerCase());
+
+  @override
+  Future<bool?> deviceCredentialsSetup() => methodChannel.invokeMethod<bool>('requireDeviceCredentialsSetup').then((value) {print(value);});
 }
