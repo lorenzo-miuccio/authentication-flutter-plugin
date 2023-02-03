@@ -19,7 +19,6 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.PluginRegistry
 import java.lang.Integer.min
-import java.util.concurrent.Executor
 
 
 /** SalamiUnlockPlugin */
@@ -31,7 +30,11 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
 
     enum class AuthResult {
         Success,
-        Failure
+        Failure,
+        TBD,
+        Unsupported,
+        UpdateNeeded,
+        Unknown
     }
 
     private var requestCode: Int = 0
@@ -45,7 +48,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
             requestCode = min(requestCode, Short.MAX_VALUE.toInt()) // max 16 bits
         }
 
-    private var onActivityResultCallback: ((AuthResult) -> Unit)? = null
+    private var onAuthResultCallback: ((AuthResult) -> Unit)? = null
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
@@ -67,11 +70,32 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
         when (call.method) {
             "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
             "requireUnlock" -> {
-                onActivityResultCallback = {
+                onAuthResultCallback = {
                     result.success(it.name)
-                    onActivityResultCallback = null
+                    onAuthResultCallback = null
                 }
                 requireUnlock(call.argument<String>("message"))
+            }
+            "requireDeviceCredentialsSetup" -> {
+                val activity = activity
+
+                activity?.packageManager?.let { pm ->
+                    fun launchIntent(i: Intent) = if (i.resolveActivity(pm) != null) {
+                        activity.startActivityForResult(i, requestCode)
+                        result.success(true)
+                    } else result.success(false)
+
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                        launchIntent(Intent(Settings.ACTION_SECURITY_SETTINGS))
+                    } else {
+                        launchIntent(Intent(Settings.ACTION_BIOMETRIC_ENROLL).apply {
+                            putExtra(
+                                Settings.EXTRA_BIOMETRIC_AUTHENTICATORS_ALLOWED,
+                                BIOMETRIC_STRONG or DEVICE_CREDENTIAL
+                            )
+                        })
+                    }
+                } ?: result.success(false)
             }
             else -> {
                 result.notImplemented()
@@ -82,8 +106,8 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
     private fun requireUnlock(message: String?) {
 
         val message = message ?: "Unlock"
-        activity?.let { activity ->
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+        activity?.also { activity ->
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                 val keyguardManager =
                     activity.getSystemService(Activity.KEYGUARD_SERVICE) as KeyguardManager
                 if (keyguardManager.isKeyguardSecure) {
@@ -97,21 +121,24 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                 val executor = ContextCompat.getMainExecutor(activity)
                 val biometricPrompt = BiometricPrompt(activity as FragmentActivity, executor,
                     object : BiometricPrompt.AuthenticationCallback() {
-                        override fun onAuthenticationError(errorCode: Int,
-                                                           errString: CharSequence) {
+                        override fun onAuthenticationError(
+                            errorCode: Int,
+                            errString: CharSequence
+                        ) {
                             super.onAuthenticationError(errorCode, errString)
-                            onActivityResultCallback?.invoke(AuthResult.Failure)
+                            onAuthResultCallback?.invoke(AuthResult.Failure)
                         }
 
                         override fun onAuthenticationSucceeded(
-                            result: BiometricPrompt.AuthenticationResult) {
+                            result: BiometricPrompt.AuthenticationResult
+                        ) {
                             super.onAuthenticationSucceeded(result)
-                            onActivityResultCallback?.invoke(AuthResult.Success)
+                            onAuthResultCallback?.invoke(AuthResult.Success)
                         }
 
                         override fun onAuthenticationFailed() {
                             super.onAuthenticationFailed()
-                            onActivityResultCallback?.invoke(AuthResult.Failure)
+                            onAuthResultCallback?.invoke(AuthResult.Failure)
                         }
                     })
                 val promptInfo = BiometricPrompt.PromptInfo.Builder()
@@ -120,18 +147,24 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                     .setAllowedAuthenticators(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)
                     .build()
                 val biometricManager = BiometricManager.from(activity)
-                if (biometricManager.canAuthenticate(BIOMETRIC_STRONG or DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED) {
-                    // Prompts the user to create credentials that your app accepts.
-                    val enrollIntent = Intent(Settings.ACTION_BIOMETRIC_ENROLL).apply {
-                        putExtra(
-                            Settings.EXTRA_BIOMETRIC_AUTHENTICATORS_ALLOWED,
-                            BIOMETRIC_STRONG or DEVICE_CREDENTIAL
-                        )
-                    }
-                    activity.startActivityForResult(enrollIntent, requestCode)
-                } else {
-                    biometricPrompt.authenticate(promptInfo)
+
+                when (
+                    biometricManager.canAuthenticate(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)) {
+                    BiometricManager.BIOMETRIC_SUCCESS -> biometricPrompt.authenticate(promptInfo)
+                    BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> onAuthResultCallback?.invoke(
+                        AuthResult.TBD
+                    )
+                    BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE,
+                    BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED,
+                    BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> onAuthResultCallback?.invoke(
+                        AuthResult.Unsupported
+                    )
+                    BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED -> onAuthResultCallback?.invoke(
+                        AuthResult.UpdateNeeded
+                    )
+                    else -> onAuthResultCallback?.invoke(AuthResult.Unknown)
                 }
+
             }
         }
 
@@ -147,13 +180,13 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
-       data.takeIf { requestCode == this.requestCode }
+        data.takeIf { requestCode == this.requestCode }
             ?.takeIf { resultCode == Activity.RESULT_OK }
             ?.let {
-                onActivityResultCallback?.invoke(AuthResult.Success)
+                onAuthResultCallback?.invoke(AuthResult.Success)
                 return true
             }
-        onActivityResultCallback?.invoke(AuthResult.Failure)
-        return  false
+        onAuthResultCallback?.invoke(AuthResult.Failure)
+        return false
     }
 }

@@ -3,6 +3,10 @@ import 'package:flutter/services.dart';
 
 import 'salami_unlock_platform_interface.dart';
 
+Enum LocalAuthResult {
+  
+}
+
 /// An implementation of [SalamiUnlockPlatform] that uses method channels.
 class MethodChannelSalamiUnlock extends SalamiUnlockPlatform {
   /// The method channel used to interact with the native platform.
