@@ -33,10 +33,6 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
         Failure
     }
 
-    private lateinit var executor: Executor
-    private lateinit var biometricPrompt: BiometricPrompt
-    private lateinit var promptInfo: BiometricPrompt.PromptInfo
-
     private var requestCode: Int = 0
 
     private lateinit var channel: MethodChannel
@@ -94,8 +90,8 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                     activity.startActivityForResult(authIntent, requestCode)
                 }
             } else {
-                executor = ContextCompat.getMainExecutor(activity)
-                biometricPrompt = BiometricPrompt(activity as FragmentActivity, executor,
+                val executor = ContextCompat.getMainExecutor(activity)
+                val biometricPrompt = BiometricPrompt(activity as FragmentActivity, executor,
                     object : BiometricPrompt.AuthenticationCallback() {
                         override fun onAuthenticationError(errorCode: Int,
                                                            errString: CharSequence) {
@@ -107,7 +103,6 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                             result: BiometricPrompt.AuthenticationResult) {
                             super.onAuthenticationSucceeded(result)
                             onActivityResultCallback?.invoke(AuthResult.Success)
-
                         }
 
                         override fun onAuthenticationFailed() {
