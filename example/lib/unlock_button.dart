@@ -7,7 +7,7 @@ class UnlockButton extends StatelessWidget {
 
   void _authCallback(BuildContext context, bool authResult) {
     authResult
-        ? Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => const SalamiPage()))
+        ? Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SalamiPage()))
         : ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication failed')));
   }
 
