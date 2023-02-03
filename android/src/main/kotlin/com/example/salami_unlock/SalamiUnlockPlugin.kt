@@ -42,7 +42,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
         set(value) {
             field = value
             requestCode = value?.hashCode() ?: 0
-            requestCode = min(requestCode, 65535)
+            requestCode = min(requestCode, Short.MAX_VALUE.toInt()) // max 16 bits
         }
 
     private var onActivityResultCallback: ((AuthResult) -> Unit)? = null
@@ -80,14 +80,16 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
     }
 
     private fun requireUnlock(message: String?) {
+
+        val message = message ?: "Unlock"
         activity?.let { activity ->
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                 val keyguardManager =
                     activity.getSystemService(Activity.KEYGUARD_SERVICE) as KeyguardManager
                 if (keyguardManager.isKeyguardSecure) {
                     val authIntent: Intent = keyguardManager.createConfirmDeviceCredentialIntent(
-                        message ?: "Type your code",
-                        message ?: "Log in using your credential"
+                        message,
+                        "Log in using your credential"
                     )
                     activity.startActivityForResult(authIntent, requestCode)
                 }
@@ -113,7 +115,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                         }
                     })
                 val promptInfo = BiometricPrompt.PromptInfo.Builder()
-                    .setTitle(message ?: "Type your code")
+                    .setTitle(message)
                     .setSubtitle("Log in using your biometric credential")
                     .setAllowedAuthenticators(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)
                     .build()
@@ -146,7 +148,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
        data.takeIf { requestCode == this.requestCode }
-            ?.takeIf { requestCode == Activity.RESULT_OK }
+            ?.takeIf { resultCode == Activity.RESULT_OK }
             ?.let {
                 onActivityResultCallback?.invoke(AuthResult.Success)
                 return true
