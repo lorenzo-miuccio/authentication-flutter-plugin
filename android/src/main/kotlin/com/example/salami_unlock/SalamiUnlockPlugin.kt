@@ -18,6 +18,7 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.PluginRegistry
+import java.lang.Integer.min
 import java.util.concurrent.Executor
 
 
@@ -41,6 +42,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
         set(value) {
             field = value
             requestCode = value?.hashCode() ?: 0
+            requestCode = min(requestCode, 65535)
         }
 
     private var onActivityResultCallback: ((AuthResult) -> Unit)? = null
