@@ -34,7 +34,7 @@ class NoneAuthDialog extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => SalamiUnlock.deviceCredentialsSetup().then((res) {
-                      if (res == null && res == false) {
+                      if (res == null || res == false) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Something went wrong')));
                       } else {
                         Navigator.of(context).pop();
