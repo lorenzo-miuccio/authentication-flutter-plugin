@@ -17,12 +17,16 @@ class NoneAuthDialog extends StatelessWidget {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 10,),
+            const SizedBox(
+              height: 10,
+            ),
             Text(
               "Do you want to configure?",
               style: Theme.of(context).textTheme.subtitle1,
             ),
-            const SizedBox(height: 10,),
+            const SizedBox(
+              height: 10,
+            ),
             Row(
               children: [
                 Expanded(
@@ -35,10 +39,10 @@ class NoneAuthDialog extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () => SalamiUnlock.deviceCredentialsSetup().then((res) {
                       if (res == null || res == false) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Something went wrong')));
-                      } else {
-                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(content: Text('Something went wrong')));
                       }
+                      Navigator.of(context).pop();
                     }),
                     child: const Text("Ok"),
                   ),

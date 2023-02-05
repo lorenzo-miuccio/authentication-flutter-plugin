@@ -39,6 +39,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
 
     private var requestCode: Int = 0
 
+
     private lateinit var channel: MethodChannel
     private lateinit var result: Result
 
@@ -48,7 +49,8 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
         set(value) {
             field = value
             requestCode = value?.hashCode() ?: 0
-            requestCode = min(requestCode, Short.MAX_VALUE.toInt()) // max 16 bits
+            requestCode =
+                min(requestCode, Short.MAX_VALUE.toInt()) // max 16 bits
         }
 
     private var onAuthResultCallback: ((AuthResult) -> Unit)? = null
@@ -85,12 +87,19 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                 requireUnlock(call.argument<String>("message"))
             }
             "requireDeviceCredentialsSetup" -> {
+
+                onAuthResultCallback = {
+                    if (it == AuthResult.Success) result.success(true)
+                    else result.success(false)
+                    onAuthResultCallback = null
+                }
+
                 val activity = activity
 
                 activity?.packageManager?.let { pm ->
                     fun launchIntent(i: Intent) = if (i.resolveActivity(pm) != null) {
-                        activity.startActivityForResult(i, requestCode)
-                        Log.e("started activity", "ok")
+                        activity.startActivity(i)
+                        result.success(true)
                     } else result.success(false)
 
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
@@ -124,7 +133,6 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                         "Log in using your credential"
                     )
                     activity.startActivityForResult(authIntent, requestCode)
-                    Log.e("start activity", "ok")
                 } else {
                     onAuthResultCallback?.invoke(AuthResult.TBD)
                 }
@@ -137,7 +145,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                             errString: CharSequence
                         ) {
                             super.onAuthenticationError(errorCode, errString)
-                            onAuthResultCallback?.invoke(AuthResult.Unknown)
+                            onAuthResultCallback?.invoke(AuthResult.Failure)
                         }
 
                         override fun onAuthenticationSucceeded(
@@ -192,14 +200,15 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         Log.e("activity result", "ok")
+
         if (requestCode == this.requestCode) {
-            return if (resultCode == Activity.RESULT_OK) {
+            if (resultCode == Activity.RESULT_OK) {
                 onAuthResultCallback?.invoke(AuthResult.Success)
-                true
             } else {
+                Log.e("result error: ", resultCode.toString())
                 onAuthResultCallback?.invoke(AuthResult.Failure)
-                false
             }
+            return true
         }
         return false
     }
