@@ -15,16 +15,18 @@ class UnlockButton extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Authentication failed')));
         break;
       case LocalAuthResult.TBD:
-        showDialog(context: context, builder: (ctx) => const NoneAuthDialog())
-            .then((value) => value);
+        showDialog(context: context, builder: (ctx) => const NoneAuthDialog()).then((value) => value);
         break;
       default:
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${authResult.name}')));
     }
   }
 
-  Future<void> _requireAuth(BuildContext context) => SalamiUnlock.require(
-      message: 'Unlock to get a present', onResult: (authResult) => _authCallback(context, authResult));
+  void _requireAuth(BuildContext context) => SalamiUnlock.require(
+        context,
+        message: 'Unlock to get a present',
+        onResult: (authResult) => _authCallback(context, authResult),
+      );
 
   @override
   Widget build(BuildContext context) {

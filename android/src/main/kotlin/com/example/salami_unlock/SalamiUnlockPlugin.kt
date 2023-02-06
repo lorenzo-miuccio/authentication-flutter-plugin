@@ -39,7 +39,6 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
 
     private var requestCode: Int = 0
 
-
     private lateinit var channel: MethodChannel
     private lateinit var result: Result
 
@@ -78,7 +77,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
     private val methodCallHandler = MethodCallHandler { call, result ->
         this.result = result
         when (call.method) {
-            "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
+
             "requireUnlock" -> {
                 onAuthResultCallback = {
                     result.success(it.name)
@@ -86,14 +85,8 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                 }
                 requireUnlock(call.argument<String>("message"))
             }
+
             "requireDeviceCredentialsSetup" -> {
-
-                onAuthResultCallback = {
-                    if (it == AuthResult.Success) result.success(true)
-                    else result.success(false)
-                    onAuthResultCallback = null
-                }
-
                 val activity = activity
 
                 activity?.packageManager?.let { pm ->
@@ -199,26 +192,13 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
-        Log.e("activity result", "ok")
-
-        if (requestCode == this.requestCode) {
-            if (resultCode == Activity.RESULT_OK) {
+        data.takeIf { requestCode == this.requestCode }
+            ?.takeIf { resultCode == Activity.RESULT_OK }
+            ?.let {
                 onAuthResultCallback?.invoke(AuthResult.Success)
-            } else {
-                Log.e("result error: ", resultCode.toString())
-                onAuthResultCallback?.invoke(AuthResult.Failure)
+                return true
             }
-            return true
-        }
+        onAuthResultCallback?.invoke(AuthResult.Failure)
         return false
     }
-    /* data.takeIf { requestCode == this.requestCode }
-         ?.takeIf { resultCode == Activity.RESULT_OK }
-         ?.let {
-             onAuthResultCallback?.invoke(AuthResult.Success)
-             return true
-         }
-     onAuthResultCallback?.invoke(AuthResult.Failure)
-     return false
- } */
 }

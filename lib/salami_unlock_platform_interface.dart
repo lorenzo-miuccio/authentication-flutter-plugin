@@ -1,18 +1,17 @@
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+part of 'salami_unlock.dart';
 
-import 'salami_unlock_method_channel.dart';
-
+@visibleForTesting
 abstract class SalamiUnlockPlatform extends PlatformInterface {
   /// Constructs a SalamiUnlockPlatform.
   SalamiUnlockPlatform() : super(token: _token);
 
   static final Object _token = Object();
 
-  static SalamiUnlockPlatform _instance = MethodChannelSalamiUnlock();
+  static SalamiUnlockPlatform _instance = _SalamiUnlockPlatformImpl();
 
   /// The default instance of [SalamiUnlockPlatform] to use.
   ///
-  /// Defaults to [MethodChannelSalamiUnlock].
+  /// Defaults to [_SalamiUnlockPlatformImpl].
   static SalamiUnlockPlatform get instance => _instance;
 
   /// Platform-specific implementations should set this with their own
@@ -23,15 +22,11 @@ abstract class SalamiUnlockPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<String?> getPlatformVersion() {
-    throw UnimplementedError('platformVersion() has not been implemented.');
-  }
-
-  Future<String?> requireUnlock(String? message) {
+  Future<String> requireUnlock(String? message) {
     throw UnimplementedError('requireUnlock() has not been implemented.');
   }
 
-  Future<bool?> deviceCredentialsSetup() {
+  Future<bool> deviceCredentialsSetup() {
     throw UnimplementedError('deviceCredentialsSetup() has not been implemented.');
   }
 }

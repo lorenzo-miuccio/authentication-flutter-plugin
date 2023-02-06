@@ -1,21 +1,23 @@
-import 'salami_unlock_platform_interface.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
+part 'salami_unlock_method_channel.dart';
+part 'salami_unlock_platform_interface.dart';
 
 class SalamiUnlock {
   SalamiUnlock._();
 
-  static Future<String?> getPlatformVersion() {
-    return SalamiUnlockPlatform.instance.getPlatformVersion();
-  }
+  static void require(BuildContext context, {String? message, void Function(LocalAuthResult)? onResult}) =>
 
-  static Future<void> require({String? message, void Function(LocalAuthResult)? onResult}) =>
-      SalamiUnlockPlatform.instance.requireUnlock(message).then((nativeAuthResult) {
-        if(onResult != null) onResult(LocalAuthResult._getBy(nativeAuthResult));
+      SalamiUnlockPlatform.instance
+      .requireUnlock(message)
+      .then((nativeAuthResult) {
+        if(context.mounted) onResult?.call(LocalAuthResult._getBy(nativeAuthResult));
       });
 
-  static Future<bool?> deviceCredentialsSetup() =>
-      SalamiUnlockPlatform.instance.deviceCredentialsSetup();
+  static Future<bool> deviceCredentialsSetup() => SalamiUnlockPlatform.instance.deviceCredentialsSetup();
 }
-
 
 enum LocalAuthResult {
   success,
@@ -25,12 +27,13 @@ enum LocalAuthResult {
   updateNeeded,
   unknown;
 
-  static LocalAuthResult _getBy(String? nativeRensponse) {
+  static LocalAuthResult _getBy(String nativeRensponse) {
+
+
     LocalAuthResult authResult;
-    switch (nativeRensponse) {
+    switch (nativeRensponse.toLowerCase()) {
       case "success":
-        authResult = LocalAuthResult.success;
-        break;
+        return LocalAuthResult.success;
       case "tbd":
         authResult = LocalAuthResult.TBD;
         break;
