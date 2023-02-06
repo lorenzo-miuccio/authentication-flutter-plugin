@@ -13,7 +13,7 @@ class SalamiUnlock {
       SalamiUnlockPlatform.instance
       .requireUnlock(message)
       .then((nativeAuthResult) {
-        if(context.mounted) onResult?.call(LocalAuthResult._getBy(nativeAuthResult));
+        if(context.mounted) onResult?.call(LocalAuthResult._getByNativeResponse(nativeAuthResult));
       });
 
   static Future<bool> deviceCredentialsSetup() => SalamiUnlockPlatform.instance.deviceCredentialsSetup();
@@ -27,32 +27,20 @@ enum LocalAuthResult {
   updateNeeded,
   unknown;
 
-  static LocalAuthResult _getBy(String nativeRensponse) {
-
-
-    LocalAuthResult authResult;
-    switch (nativeRensponse.toLowerCase()) {
+  static LocalAuthResult _getByNativeResponse(String nativeResponse) {
+    switch (nativeResponse.toLowerCase()) {
       case "success":
         return LocalAuthResult.success;
       case "tbd":
-        authResult = LocalAuthResult.TBD;
-        break;
-
+        return LocalAuthResult.TBD;
       case "failure":
-        authResult = LocalAuthResult.failure;
-        break;
-
+        return LocalAuthResult.failure;
       case "unsupported":
-        authResult = LocalAuthResult.unsupported;
-        break;
-
+        return LocalAuthResult.unsupported;
       case "updateNeeded":
-        authResult = LocalAuthResult.success;
-        break;
-
+        return LocalAuthResult.success;
       default:
-        authResult = LocalAuthResult.unknown;
+        return LocalAuthResult.unknown;
     }
-    return authResult;
   }
 }
