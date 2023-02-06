@@ -28,7 +28,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
     /// when the Flutter Engine is detached from the Activity
 
 
-    ///Possible Authentication results to be forwarded to the flutter implementation
+    /// Possible Authentication results to be forwarded to the Flutter caller as String
     enum class AuthResult {
         Success,
         Failure,
@@ -95,7 +95,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
              * Returns true to flutter if the activity was launched so the user was redirected to the appropriate settings page,
              * otherwise false
              *
-             * The action [Settings.ACTION_BIOMETRIC_ENROLL] requires Android SDK > 30.
+             * The action for the intent [Settings.ACTION_BIOMETRIC_ENROLL] requires Android SDK > 30.
              * The function checks if the requirement is guaranteed, otherwise the action would be
              * [Settings.ACTION_SECURITY_SETTINGS]
              */

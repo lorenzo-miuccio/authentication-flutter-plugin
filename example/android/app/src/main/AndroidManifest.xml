@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.salami_unlock_example">
-   <application
+
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+    <application
         android:label="salami_unlock_example"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

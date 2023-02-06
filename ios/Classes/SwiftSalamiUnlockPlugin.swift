@@ -30,8 +30,8 @@ public class SwiftSalamiUnlockPlugin: NSObject, FlutterPlugin {
         /// Method called to show the authentication dialog to the user.
         ///
         /// If the user can't be authenticated by biometry or passcode an AuthResult rawvalue will be submitted to Flutter according to the encountered error.
-        ///Otherwise the dialog will be displayed.
-        ///If the user manages to authenticate the Flutter caller will receive an AuthResult.success, otherwise an AuthResult.failure
+        /// Otherwise the dialog will be displayed.
+        /// If the user manages to authenticate the Flutter caller will receive an AuthResult.success, otherwise an AuthResult.failure
         else if(call.method == "requireUnlock") {
             let args = call.arguments as? [String: Any]
             let message = args?["message"] as? String ?? "Unlock screen"
