@@ -11,7 +11,6 @@ import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -28,6 +27,8 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
     /// This local reference serves to register the plugin with the Flutter Engine and unregister it
     /// when the Flutter Engine is detached from the Activity
 
+
+    ///Possible Authentication results to be forwarded to the flutter implementation
     enum class AuthResult {
         Success,
         Failure,
@@ -78,6 +79,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
         this.result = result
         when (call.method) {
 
+            //Method called when flutter requires a local authentication
             "requireUnlock" -> {
                 onAuthResultCallback = {
                     result.success(it.name)
@@ -86,6 +88,17 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                 requireUnlock(call.argument<String>("message"))
             }
 
+            /**
+             * Method called to setup the device credentials for authentication.
+             *
+             * First checks if the activity can be launched with the setup credentials intent.
+             * Returns true to flutter if the activity was launched so the user was redirected to the appropriate settings page,
+             * otherwise false
+             *
+             * The action [Settings.ACTION_BIOMETRIC_ENROLL] requires Android SDK > 30.
+             * The function checks if the requirement is guaranteed, otherwise the action would be
+             * [Settings.ACTION_SECURITY_SETTINGS]
+             */
             "requireDeviceCredentialsSetup" -> {
                 val activity = activity
 
@@ -95,15 +108,15 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                         result.success(true)
                     } else result.success(false)
 
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                        launchIntent(Intent(Settings.ACTION_SECURITY_SETTINGS))
-                    } else {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         launchIntent(Intent(Settings.ACTION_BIOMETRIC_ENROLL).apply {
                             putExtra(
                                 Settings.EXTRA_BIOMETRIC_AUTHENTICATORS_ALLOWED,
                                 BIOMETRIC_STRONG or DEVICE_CREDENTIAL
                             )
                         })
+                    } else {
+                        launchIntent(Intent(Settings.ACTION_SECURITY_SETTINGS))
                     }
                 } ?: result.success(false)
             }
@@ -113,23 +126,22 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
         }
     }
 
+    /**
+     * Firstly checks if it is possible for the user to authenticate with either biometric sensors or
+     * device credentials (pin, password or pattern).
+     *
+     * Start a new activity with the authentication intent if possible, otherwise returns to flutter
+     * the [AuthResult] that corresponds to the error.
+     *
+     * When the activity is completed the function [onActivityResult] is called
+     *
+     * Uses [BiometricPrompt] if the device SDK version is >= 30, otherwise [KeyguardManager]
+     */
     private fun requireUnlock(message: String?) {
 
         val message = message ?: "Unlock"
         activity?.also { activity ->
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                val keyguardManager =
-                    activity.getSystemService(Activity.KEYGUARD_SERVICE) as KeyguardManager
-                if (keyguardManager.isDeviceSecure) {
-                    val authIntent: Intent = keyguardManager.createConfirmDeviceCredentialIntent(
-                        message,
-                        "Log in using your credential"
-                    )
-                    activity.startActivityForResult(authIntent, requestCode)
-                } else {
-                    onAuthResultCallback?.invoke(AuthResult.TBD)
-                }
-            } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 val executor = ContextCompat.getMainExecutor(activity)
                 val biometricPrompt = BiometricPrompt(activity as FragmentActivity, executor,
                     object : BiometricPrompt.AuthenticationCallback() {
@@ -155,14 +167,14 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                     })
                 val promptInfo = BiometricPrompt.PromptInfo.Builder()
                     .setTitle(message)
-                    .setSubtitle("Log in using your biometric credential")
+                    .setSubtitle("Log in using your credentials")
                     .setAllowedAuthenticators(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)
                     .build()
                 val biometricManager = BiometricManager.from(activity)
 
                 when (
                     biometricManager.canAuthenticate(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)) {
-                    BiometricManager.BIOMETRIC_SUCCESS -> biometricPrompt.authenticate(promptInfo)
+                    BiometricManager.BIOMETRIC_STATUS_UNKNOWN -> biometricPrompt.authenticate(promptInfo)
                     BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> onAuthResultCallback?.invoke(
                         AuthResult.TBD
                     )
@@ -176,7 +188,18 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
                     )
                     else -> onAuthResultCallback?.invoke(AuthResult.Unknown)
                 }
-
+            } else {
+                val keyguardManager =
+                    activity.getSystemService(Activity.KEYGUARD_SERVICE) as KeyguardManager
+                if (keyguardManager.isDeviceSecure) {
+                    val authIntent: Intent = keyguardManager.createConfirmDeviceCredentialIntent(
+                        message,
+                        "Log in using your credential"
+                    )
+                    activity.startActivityForResult(authIntent, requestCode)
+                } else {
+                    onAuthResultCallback?.invoke(AuthResult.TBD)
+                }
             }
         }
 

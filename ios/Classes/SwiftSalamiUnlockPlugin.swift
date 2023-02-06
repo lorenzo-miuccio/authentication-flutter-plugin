@@ -6,7 +6,7 @@ enum AuthResult: String {
     case success = "Success"
     case failure = "Failure"
     case unknown = "Unknown"
-    case updateNeeded = "UpdateNeeded"
+    case updateNeeded = "UpdateNeeded" // currently specified only for android platforms
     case TBD = "TBD"
     case Unsupported = "Unsupported"
 }
@@ -21,9 +21,18 @@ public class SwiftSalamiUnlockPlugin: NSObject, FlutterPlugin {
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         
+        // It's not possible to redirect the user to the local credentials setup page, so the method returns always false to flutter
         if(call.method == "requireDeviceCredentialsSetup") {
             result(false)
-        } else if(call.method == "requireUnlock") {
+            
+        
+        }
+        /// Method called to show the authentication dialog to the user.
+        ///
+        /// If the user can't be authenticated by biometry or passcode an AuthResult rawvalue will be submitted to Flutter according to the encountered error.
+        ///Otherwise the dialog will be displayed.
+        ///If the user manages to authenticate the Flutter caller will receive an AuthResult.success, otherwise an AuthResult.failure
+        else if(call.method == "requireUnlock") {
             let args = call.arguments as? [String: Any]
             let message = args?["message"] as? String ?? "Unlock screen"
             
@@ -39,10 +48,8 @@ public class SwiftSalamiUnlockPlugin: NSObject, FlutterPlugin {
                     }
                 }
             } else {
-                print(authError?.localizedDescription ?? "Can't evaluate policy")
-                
                 switch authError?.code {
-                case LAError.biometryLockout.rawValue:
+                case LAError.biometryLockout.rawValue, LAError.appCancel.rawValue, LAError.systemCancel.rawValue, LAError.userCancel.rawValue:
                     result(AuthResult.failure.rawValue)
                 case LAError.biometryNotEnrolled.rawValue, LAError.passcodeNotSet.rawValue:
                     result(AuthResult.TBD.rawValue)

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:salami_unlock/salami_unlock.dart';
 
-class NoneAuthDialog extends StatelessWidget {
-  const NoneAuthDialog({Key? key}) : super(key: key);
+class RequestAuthEnrollDialog extends StatelessWidget {
+  const RequestAuthEnrollDialog({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -38,9 +38,9 @@ class NoneAuthDialog extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => SalamiUnlock.deviceCredentialsSetup().then((res) {
-                      if (res == null || res == false) {
+                      if (res == false) {
                         ScaffoldMessenger.of(context)
-                            .showSnackBar(const SnackBar(content: Text('Something went wrong')));
+                            .showSnackBar(const SnackBar(content: Text('Go to settings to setup your device credentials')));
                       }
                       Navigator.of(context).pop();
                     }),

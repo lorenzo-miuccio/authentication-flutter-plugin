@@ -7,7 +7,7 @@ class SalamiPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Beccate sto salame'),
+        title: const Text('This Salami is for you'),
       ),
       body: Center(child: Image.asset('assets/salami.jpg')),
     );
