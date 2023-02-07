@@ -68,7 +68,7 @@ enum LocalAuthResult {
       case "unsupported":
         return LocalAuthResult.unsupported;
       case "updateNeeded":
-        return LocalAuthResult.success;
+        return LocalAuthResult.updateNeeded;
       default:
         return LocalAuthResult.unknown;
     }
