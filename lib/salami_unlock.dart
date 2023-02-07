@@ -42,7 +42,7 @@ enum LocalAuthResult {
   ///The user canceled the authentication process or failed to provide valid credentials.
   failure,
 
-  ///The user can't authenticate because no biometric or device credential is enrolled.
+  ///The user can't authenticate because no biometric or device credentials are enrolled.
   ///On android devices you can redirect the user to the credentials setup page calling [SalamiUnlock.deviceCredentialsSetup]
   TBD,
 
