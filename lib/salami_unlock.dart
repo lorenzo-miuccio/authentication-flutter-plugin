@@ -16,7 +16,7 @@ class SalamiUnlock {
   /// for authentication.
   ///
   /// Provide [onResult] to specify a callback to execute according to the [LocalAuthResult].
-  static void require(BuildContext context, {String? message, void Function(LocalAuthResult)? onResult}) =>
+  static void requireUnlock(BuildContext context, {String? message, void Function(LocalAuthResult)? onResult}) =>
       SalamiUnlockPlatform.instance
       .requireUnlock(message)
       .then((nativeAuthResponse) {
@@ -26,7 +26,7 @@ class SalamiUnlock {
 
   ///Only for android platforms.
   ///
-  ///Redirects the user to the local credentials setup page.
+  ///Redirects the user to the device credentials setup page.
   ///
   /// Returns true if the user was correctly redirected to the page, otherwise false.
   /// On iOS platforms returns always false.

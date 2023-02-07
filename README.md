@@ -20,7 +20,7 @@ when the authentication result is received.
 import 'package:salami_unlock/salami_unlock.dart';
 // ...
 
-  SalamiUnlock.require(context, message: 'Please authenticate to unlock', onResult: onResult);
+  SalamiUnlock.requireUnlock(context, message: 'Please authenticate to unlock', onResult: onResult);
   
   // ...
 

@@ -29,7 +29,7 @@ class UnlockButton extends StatelessWidget {
     }
   }
 
-  void _requireAuth(BuildContext context) => SalamiUnlock.require(
+  void _requireAuth(BuildContext context) => SalamiUnlock.requireUnlock(
         context,
         message: 'Unlock to get a present',
         onResult: (authResult) => _authCallback(context, authResult),
