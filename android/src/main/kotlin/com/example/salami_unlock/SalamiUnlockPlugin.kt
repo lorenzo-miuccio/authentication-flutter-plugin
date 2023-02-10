@@ -5,6 +5,7 @@ import android.app.KeyguardManager
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
@@ -20,13 +21,18 @@ import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry
 import java.lang.Integer.min
 
-/** SalamiUnlockPlugin */
+/**
+ * Implements:
+ *
+ * - [ActivityAware] because we are interested in Activity lifecycle events
+ * related to a FlutterEngine running within the given Activity.
+ *
+ * - [PluginRegistry.ActivityResultListener] to implement the method [onActivityResult].
+ * We get a result back from an activity using the method [Activity.startActivityForResult] to launch it.
+ * The result will be handled in [onActivityResult].
+ *
+ */
 class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.ActivityResultListener {
-    /// The MethodChannel that will the communication between Flutter and native Android
-    ///
-    /// This local reference serves to register the plugin with the Flutter Engine and unregister it
-    /// when the Flutter Engine is detached from the Activity
-
 
     /// Possible Authentication results to be forwarded to the Flutter caller as String
     enum class AuthResult {
@@ -40,8 +46,11 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
 
     private var requestCode: Int = 0
 
+    /// The MethodChannel that will the communication between Flutter and native Android
+    ///
+    /// This local reference serves to register the plugin with the Flutter Engine and unregister it
+    /// when the Flutter Engine is detached from the Activity
     private lateinit var channel: MethodChannel
-    private lateinit var result: Result
 
     private var pluginBinding: ActivityPluginBinding? = null
 
@@ -55,10 +64,25 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
 
     private var onAuthResultCallback: ((AuthResult) -> Unit)? = null
 
+    override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "salami_unlock")
+        channel.setMethodCallHandler(methodCallHandler)
+    }
+
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        channel.setMethodCallHandler(null)
+    }
+
+    //Retrieve the activity from the pluginBinding when the activity is connected to the flutter engine
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
         pluginBinding = binding
-        pluginBinding?.addActivityResultListener(this) //imp
+
+        /**
+         * Add this line to ensure to trigger the [onActivityResult] method when
+         * an activity returns a result
+         */
+        pluginBinding?.addActivityResultListener(this)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
@@ -76,7 +100,6 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
     }
 
     private val methodCallHandler = MethodCallHandler { call, result ->
-        this.result = result
         when (call.method) {
 
             //Method called when flutter requires a local authentication
@@ -174,7 +197,7 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
 
                 when (
                     biometricManager.canAuthenticate(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)) {
-                    BiometricManager.BIOMETRIC_STATUS_UNKNOWN -> biometricPrompt.authenticate(promptInfo)
+                    BiometricManager.BIOMETRIC_SUCCESS -> biometricPrompt.authenticate(promptInfo)
                     BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> onAuthResultCallback?.invoke(
                         AuthResult.TBD
                     )
@@ -203,15 +226,6 @@ class SalamiUnlockPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activity
             }
         }
 
-    }
-
-    override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "salami_unlock")
-        channel.setMethodCallHandler(methodCallHandler)
-    }
-
-    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        channel.setMethodCallHandler(null)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {

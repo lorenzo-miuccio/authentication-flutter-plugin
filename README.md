@@ -52,7 +52,7 @@ import 'package:salami_unlock/salami_unlock.dart';
 
 If there is no device or biometric credentials already set up by the user, 
 you can call the method `deviceCredentialsSetup()` to redirect the user to the security page 
-of Android settings. On iOS devices this method 
+of Android settings. On iOS devices this method
 
 ```dart
 import 'package:salami_unlock/salami_unlock.dart';
@@ -60,5 +60,3 @@ import 'package:salami_unlock/salami_unlock.dart';
   final bool userRedirected = await SalamiUnlock.deviceCredentialsSetup(); // true if the user was redirected to the settings page, otherwise false
   // ···
 ```
-
-C

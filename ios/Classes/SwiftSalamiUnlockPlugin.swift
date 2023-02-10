@@ -59,6 +59,8 @@ public class SwiftSalamiUnlockPlugin: NSObject, FlutterPlugin {
                     result(AuthResult.unknown.rawValue)
                 }
             }
+        } else {
+            result(FlutterMethodNotImplemented)
         }
     }
 }
